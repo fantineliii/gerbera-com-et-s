@@ -1,0 +1,719 @@
+<!-- Dev de Coração 
+     O código da galáxia de flores vermelhas
+     -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Feliz Dia das Flores Vermelhas | Galáxia 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Poppins', 'Segoe UI', 'Quicksand', 'Fredoka One', cursive, sans-serif;
+            color: #fff;
+        }
+        canvas {
+            display: block;
+        }
+
+        /* Mensagem central */
+        .greeting {
+            position: absolute;
+            top: 14px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            z-index: 20;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #FF9C9C;
+            text-shadow: 0 0 6px rgba(0,0,0,0.6);
+            letter-spacing: 0.3px;
+        }
+        /* Controles e selo */
+        .badge-control {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            border-radius: 40px;
+            padding: 6px 16px;
+            font-size: 0.7rem;
+            pointer-events: none;
+            font-weight: 500;
+            color: #FF8585;
+            border: 1px solid #FF858580;
+            z-index: 15;
+        }
+        .control-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            pointer-events: none;
+            white-space: nowrap;
+            font-family: monospace;
+            letter-spacing: 1px;
+            color: #FFB3A3;
+            z-index: 15;
+        }
+        @media (max-width: 700px) {
+            .greeting { font-size: 0.7rem; top: 10px; }
+            .badge-control { font-size: 0.6rem; }
+            .control-hint { font-size: 0.6rem; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mensagem -->
+    <div class="greeting">🌺 Eu te amo 🌺</div>
+
+    <div class="badge-control">🌀 360° | Galáxia de Gérberas</div>
+    <div class="control-hint">🖱️ Arraste para rotacionar 360° | Zoom com scroll</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- Cena ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0205);
+        scene.fog = new THREE.FogExp2(0x0a0205, 0.00045);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(13, 6, 18);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.3;
+        document.body.appendChild(renderer.domElement);
+
+        // --- Pós-processamento bloom ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.4, 0.85);
+        bloomPass.threshold = 0.08;
+        bloomPass.strength = 0.75;
+        bloomPass.radius = 0.6;
+        const effectComposer = new EffectComposer(renderer);
+        effectComposer.addPass(renderScene);
+        effectComposer.addPass(bloomPass);
+
+        // --- Controles 360° ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.rotateSpeed = 1.2;
+        controls.zoomSpeed = 1.0;
+        controls.panSpeed = 0.5;
+        controls.enableZoom = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.65;
+        controls.target.set(0, 0.5, 0);
+
+        // ---------- 1. FLORES EM FORMA DE GALÁXIA ----------
+        // Texturas variadas de flores vermelhas (gérberas)
+        function createFlowerTexture(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 128, 128);
+            const cx = 64, cy = 64;
+            
+            if (type === 0) { 
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2;
+                    const px = cx + Math.cos(angle) * 32;
+                    const py = cy + Math.sin(angle) * 32;
+                    ctx.beginPath();
+                    ctx.ellipse(px, py, 22, 28, angle, 0, Math.PI * 2);
+                    ctx.fillStyle = '#E63946';
+                    ctx.fill();
+                }
+            } else if (type === 1) { 
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const px = cx + Math.cos(angle) * 38;
+                    const py = cy + Math.sin(angle) * 38;
+                    ctx.save();
+                    ctx.translate(px, py);
+                    ctx.rotate(angle);
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 16, 30, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = '#D62246';
+                    ctx.fill();
+                    ctx.restore();
+                }
+            } else { // pequena estrela
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2;
+                    const px = cx + Math.cos(angle) * 28;
+                    const py = cy + Math.sin(angle) * 28;
+                    ctx.beginPath();
+                    ctx.ellipse(px, py, 14, 18, angle, 0, Math.PI * 2);
+                    ctx.fillStyle = '#FF5C5C';
+                    ctx.fill();
+                }
+            }
+            // centro comum (típico das gérberas: disco escuro)
+            ctx.beginPath();
+            ctx.arc(cx, cy, 16, 0, 2 * Math.PI);
+            ctx.fillStyle = '#3D1F12';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1F1009';
+            ctx.fill();
+            ctx.fillStyle = '#FFD9A0';
+            for (let i=0; i<20; i++) {
+                const rad = Math.random() * 12;
+                const ang = Math.random() * Math.PI * 2;
+                const x = cx + Math.cos(ang) * rad;
+                const y = cy + Math.sin(ang) * rad;
+                ctx.beginPath();
+                ctx.arc(x, y, 1.2, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        const flowerTextures = [
+            createFlowerTexture(0),
+            createFlowerTexture(1),
+            createFlowerTexture(2)
+        ];
+
+        const TOTAL_FLOWERS = 18500;
+        const positions = new Float32Array(TOTAL_FLOWERS * 3);
+        const colors = new Float32Array(TOTAL_FLOWERS * 3);
+        const sizes = new Float32Array(TOTAL_FLOWERS);
+        const texIndices = new Float32Array(TOTAL_FLOWERS);
+
+        const arms = 4;
+        const spiralTightness = 2.6;
+        const armSpread = 0.58;
+        const innerRadius = 1.0;
+        const outerRadius = 16.2;
+
+        for (let i = 0; i < TOTAL_FLOWERS; i++) {
+            let radius, angle, yOffset;
+            const isCore = Math.random() < 0.2;
+            if (isCore) {
+                radius = Math.pow(Math.random(), 1.3) * 3.8;
+                angle = Math.random() * Math.PI * 2;
+                yOffset = (Math.random() - 0.5) * 1.9 * (1 - radius / 5);
+            } else {
+                const armIdx = Math.floor(Math.random() * arms);
+                const armAngleOffset = (armIdx / arms) * Math.PI * 2;
+                const t = Math.pow(Math.random(), 1.1);
+                radius = innerRadius + t * (outerRadius - innerRadius);
+                const spiralAngle = spiralTightness * Math.log(radius + 0.6) + armAngleOffset;
+                const randomAngleOffset = (Math.random() - 0.5) * armSpread * (1 + radius * 0.08);
+                angle = spiralAngle + randomAngleOffset;
+                yOffset = Math.sin(radius * 1.4 + armIdx) * 0.85 + (Math.random() - 0.5) * 0.8;
+                if (Math.random() > 0.7) yOffset += (Math.random() - 0.5) * 0.9;
+            }
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            const y = yOffset * 1.3;
+            positions[i*3] = x;
+            positions[i*3+1] = y;
+            positions[i*3+2] = z;
+            
+            const distFactor = Math.min(1, Math.sqrt(x*x + y*y + z*z) / 14);
+            let r = 0.88 + Math.random() * 0.12, g = 0.08 + Math.random() * 0.14, b = 0.10 + Math.random() * 0.14;
+            if (distFactor < 0.3) { r = 0.7 + Math.random()*0.15; g = 0.04; b = 0.05; }
+            if (distFactor > 0.7) { r = 1.0; g = 0.22 + Math.random()*0.12; b = 0.20; }
+            colors[i*3] = r;
+            colors[i*3+1] = g;
+            colors[i*3+2] = b;
+            
+            let sizeVal = 0.28 + Math.random() * 0.48;
+            if (distFactor < 0.3) sizeVal *= 0.85;
+            if (distFactor > 0.8) sizeVal *= 1.25;
+            if (Math.random() > 0.93) sizeVal *= 1.55;
+            sizes[i] = sizeVal;
+            texIndices[i] = Math.floor(Math.random() * flowerTextures.length);
+        }
+
+        const flowerGeometry = new THREE.BufferGeometry();
+        flowerGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        flowerGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        flowerGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+        flowerGeometry.setAttribute('texIndex', new THREE.BufferAttribute(texIndices, 1));
+
+        const vertexShader = `
+            attribute float size;
+            attribute vec3 color;
+            attribute float texIndex;
+            varying vec3 vColor;
+            varying float vTexIndex;
+            void main() {
+                vColor = color;
+                vTexIndex = texIndex;
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = size * ( 300.0 / ( - mvPosition.z ) ) * 0.95;
+                gl_PointSize = clamp(gl_PointSize, 7.0, 48.0);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        const fragmentShader = `
+            uniform sampler2D uTextures[3];
+            varying vec3 vColor;
+            varying float vTexIndex;
+            void main() {
+                int idx = int(round(vTexIndex));
+                vec4 texColor;
+                if (idx == 0) texColor = texture2D(uTextures[0], gl_PointCoord);
+                else if (idx == 1) texColor = texture2D(uTextures[1], gl_PointCoord);
+                else texColor = texture2D(uTextures[2], gl_PointCoord);
+                if (texColor.a < 0.2) discard;
+                vec3 finalColor = vColor * texColor.rgb;
+                finalColor += vec3(0.18, 0.03, 0.03);
+                gl_FragColor = vec4(finalColor, texColor.a * 0.95);
+            }
+        `;
+
+        const flowerMaterial = new THREE.ShaderMaterial({
+            uniforms: { uTextures: { value: flowerTextures } },
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+
+        const flowerPoints = new THREE.Points(flowerGeometry, flowerMaterial);
+        scene.add(flowerPoints);
+
+        // ---------- 2. RAMOS DE GÉRBERAS VERMELHAS EM 3D ----------
+        // Função para criar uma gérbera individual (caule, folhas, flor com pétalas)
+        function createGerbera(x, z, yOffset = 0, scaleFactor = 1.0) {
+            const group = new THREE.Group();
+            
+            // Caule
+            const stemGeo = new THREE.CylinderGeometry(0.12 * scaleFactor, 0.18 * scaleFactor, 1.1 * scaleFactor, 6);
+            const stemMat = new THREE.MeshStandardMaterial({ color: 0x5a9e4e, roughness: 0.6, metalness: 0.1 });
+            const stem = new THREE.Mesh(stemGeo, stemMat);
+            stem.position.y = -0.55 * scaleFactor;
+            group.add(stem);
+            
+            // Folhas
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x6ab04c });
+            const leaf1Geo = new THREE.BoxGeometry(0.35 * scaleFactor, 0.08 * scaleFactor, 0.2 * scaleFactor);
+            const leaf1 = new THREE.Mesh(leaf1Geo, leafMat);
+            leaf1.position.set(0.25 * scaleFactor, -0.3 * scaleFactor, 0);
+            leaf1.rotation.z = 0.5;
+            group.add(leaf1);
+            
+            const leaf2 = new THREE.Mesh(leaf1Geo, leafMat);
+            leaf2.position.set(-0.25 * scaleFactor, -0.3 * scaleFactor, 0);
+            leaf2.rotation.z = -0.5;
+            group.add(leaf2);
+            
+            // Centro da flor (disco escuro, característico da gérbera)
+            const centerGeo = new THREE.SphereGeometry(0.28 * scaleFactor, 16, 16);
+            const centerMat = new THREE.MeshStandardMaterial({ color: 0x2b1a14, emissive: 0x150d09, emissiveIntensity: 0.2 });
+            const center = new THREE.Mesh(centerGeo, centerMat);
+            center.position.y = 0.1 * scaleFactor;
+            group.add(center);
+            
+            // Pétalas vermelhas ao redor (12 pétalas planas)
+            const petalMat = new THREE.MeshStandardMaterial({ color: 0xd62246, emissive: 0xaa1530, emissiveIntensity: 0.25 });
+            for (let i = 0; i < 14; i++) {
+                const angle = (i / 14) * Math.PI * 2;
+                const petalGeo = new THREE.CylinderGeometry(0.22 * scaleFactor, 0.24 * scaleFactor, 0.6 * scaleFactor, 5);
+                const petal = new THREE.Mesh(petalGeo, petalMat);
+                petal.position.x = Math.cos(angle) * 0.48 * scaleFactor;
+                petal.position.z = Math.sin(angle) * 0.48 * scaleFactor;
+                petal.position.y = 0.05 * scaleFactor;
+                petal.rotation.z = angle;
+                petal.rotation.x = 0.4;
+                group.add(petal);
+            }
+            // Segunda camada de pétalas menores
+            for (let i = 0; i < 10; i++) {
+                const angle = (i / 10) * Math.PI * 2 + 0.3;
+                const petalGeo = new THREE.CylinderGeometry(0.16 * scaleFactor, 0.18 * scaleFactor, 0.5 * scaleFactor, 5);
+                const petal = new THREE.Mesh(petalGeo, petalMat);
+                petal.position.x = Math.cos(angle) * 0.62 * scaleFactor;
+                petal.position.z = Math.sin(angle) * 0.62 * scaleFactor;
+                petal.position.y = 0.02 * scaleFactor;
+                petal.rotation.z = angle;
+                petal.rotation.x = 0.3;
+                group.add(petal);
+            }
+            
+            group.position.set(x, yOffset, z);
+            // Rotação aleatória para que nem todas fiquem na mesma direção
+            group.rotation.y = Math.random() * Math.PI * 2;
+            return group;
+        }
+        
+        const gerberaPositions = [];
+        // Núcleo: algumas ao redor
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const radius = 1.8 + Math.random() * 1.2;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            gerberaPositions.push({ x, z, y: -0.2 + Math.random() * 0.5, scale: 0.9 + Math.random() * 0.3 });
+        }
+        // Braços espirais
+        const armAngles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+        for (let a = 0; a < armAngles.length; a++) {
+            for (let r = 3.5; r <= 12; r += 2.2) {
+                const angleOffset = armAngles[a];
+                const spiralBase = spiralTightness * Math.log(r + 0.8);
+                const angle = spiralBase + angleOffset + (Math.random() - 0.5) * 0.8;
+                const x = Math.cos(angle) * r;
+                const z = Math.sin(angle) * r;
+                const y = Math.sin(r * 1.2) * 0.4 + (Math.random() - 0.5) * 0.4;
+                gerberaPositions.push({ x, z, y: y - 0.1, scale: 0.8 + Math.random() * 0.5 });
+            }
+        }
+        // Ramos adicionais flutuantes
+        for (let i = 0; i < 12; i++) {
+            const rad = 6 + Math.random() * 7;
+            const ang = Math.random() * Math.PI * 2;
+            const x = Math.cos(ang) * rad;
+            const z = Math.sin(ang) * rad;
+            const y = (Math.random() - 0.5) * 1.2;
+            gerberaPositions.push({ x, z, y: y, scale: 0.7 + Math.random() * 0.6 });
+        }
+        
+        const gerberasGroup = new THREE.Group();
+        gerberaPositions.forEach(pos => {
+            const gerbera = createGerbera(pos.x, pos.z, pos.y, pos.scale);
+            gerberasGroup.add(gerbera);
+        });
+        scene.add(gerberasGroup);
+        
+        // Adicionar algumas partículas de pólen ao redor das gérberas (efeito de brilho)
+        const pollenCount = 1800;
+        const pollenPositions = new Float32Array(pollenCount * 3);
+        for (let i = 0; i < pollenCount; i++) {
+            const idx = Math.floor(Math.random() * gerberaPositions.length);
+            const base = gerberaPositions[idx];
+            const offsetX = (Math.random() - 0.5) * 1.2;
+            const offsetZ = (Math.random() - 0.5) * 1.2;
+            const offsetY = (Math.random() - 0.5) * 1.0;
+            pollenPositions[i*3] = base.x + offsetX;
+            pollenPositions[i*3+1] = base.y + offsetY + 0.2;
+            pollenPositions[i*3+2] = base.z + offsetZ;
+        }
+        const pollenGeo = new THREE.BufferGeometry();
+        pollenGeo.setAttribute('position', new THREE.BufferAttribute(pollenPositions, 3));
+        const pollenMat = new THREE.PointsMaterial({ color: 0xff9a8a, size: 0.05, transparent: true, blending: THREE.AdditiveBlending });
+        const pollenPoints = new THREE.Points(pollenGeo, pollenMat);
+        scene.add(pollenPoints);
+        
+        // ---------- 3. ELEMENTOS DE FUNDO: ESTRELAS E POEIRA ----------
+        const starCount = 4500;
+        const starPositionsArr = new Float32Array(starCount * 3);
+        const starColorsArr = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            const rad = 40 + Math.random() * 55;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            starPositionsArr[i*3] = rad * Math.sin(phi) * Math.cos(theta);
+            starPositionsArr[i*3+1] = rad * Math.sin(phi) * Math.sin(theta) * 0.5;
+            starPositionsArr[i*3+2] = rad * Math.cos(phi);
+            const intens = 0.4 + Math.random() * 0.8;
+            starColorsArr[i*3] = intens * (Math.random() > 0.6 ? 1.0 : 0.85);
+            starColorsArr[i*3+1] = intens * (Math.random() > 0.5 ? 0.5 : 0.35);
+            starColorsArr[i*3+2] = intens * 0.4;
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPositionsArr, 3));
+        starGeo.setAttribute('color', new THREE.BufferAttribute(starColorsArr, 3));
+        const starMatObj = new THREE.PointsMaterial({ size: 0.16, vertexColors: true, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending });
+        const starsField = new THREE.Points(starGeo, starMatObj);
+        scene.add(starsField);
+        
+        const dustCount = 8000;
+        const dustPositions = new Float32Array(dustCount * 3);
+        for (let i = 0; i < dustCount; i++) {
+            const radius = 5 + Math.random() * 14;
+            const ang = Math.random() * Math.PI * 2;
+            const y = (Math.random() - 0.5) * 4.5;
+            dustPositions[i*3] = Math.cos(ang) * radius * (0.6 + Math.random() * 0.7);
+            dustPositions[i*3+1] = y + (Math.random() - 0.5) * 1.5;
+            dustPositions[i*3+2] = Math.sin(ang) * radius * (0.6 + Math.random() * 0.7);
+        }
+        const dustGeoObj = new THREE.BufferGeometry();
+        dustGeoObj.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+        const dustMatObj = new THREE.PointsMaterial({ color: 0xff5544, size: 0.055, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
+        const dustCloud = new THREE.Points(dustGeoObj, dustMatObj);
+        scene.add(dustCloud);
+        
+        // ---------- 4. NÚCLEO BRILHANTE E HALO ----------
+        const coreGlow = new THREE.Mesh(
+            new THREE.SphereGeometry(1.4, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0xcc0022, emissiveIntensity: 1.6, roughness: 0.2 })
+        );
+        scene.add(coreGlow);
+        
+        const haloCount = 1500;
+        const haloPositions = new Float32Array(haloCount * 3);
+        for (let i = 0; i < haloCount; i++) {
+            const rad = 1.8 + Math.random() * 2.2;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            haloPositions[i*3] = rad * Math.sin(phi) * Math.cos(theta);
+            haloPositions[i*3+1] = rad * Math.sin(phi) * Math.sin(theta) * 0.7;
+            haloPositions[i*3+2] = rad * Math.cos(phi);
+        }
+        const haloGeo = new THREE.BufferGeometry();
+        haloGeo.setAttribute('position', new THREE.BufferAttribute(haloPositions, 3));
+        const haloMatPoints = new THREE.PointsMaterial({ color: 0xff7777, size: 0.08, blending: THREE.AdditiveBlending });
+        const haloRing = new THREE.Points(haloGeo, haloMatPoints);
+        scene.add(haloRing);
+        
+        // Luzes
+        const ambientLight = new THREE.AmbientLight(0x220505);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xff5555, 1.2, 30);
+        pointLight.position.set(2, 1.5, 2);
+        scene.add(pointLight);
+        const backLight = new THREE.PointLight(0xff6666, 0.7);
+        backLight.position.set(-3, 2, -5);
+        scene.add(backLight);
+        const fillLight = new THREE.PointLight(0xff8888, 0.6);
+        fillLight.position.set(1, 3, 3);
+        scene.add(fillLight);
+        
+        // ---------- 5. FOTOS DE MEMÓRIAS SALTANDO DA GALÁXIA ----------
+        // Imagens embutidas em base64 (não dependem de arquivos externos)
+        const MEMORY_PHOTO_1 = "data:image/jpeg;base64,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";
+        const MEMORY_PHOTO_2 = "data:image/jpeg;base64,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";
+
+        function loadMemoryImage(src) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = src;
+            });
+        }
+
+        // Desenha a imagem cortando/escalando para cobrir o retângulo de destino (como background-size: cover)
+        function drawImageCover(ctx, img, dx, dy, dw, dh) {
+            const destRatio = dw / dh;
+            const srcRatio = img.width / img.height;
+            let sx, sy, sw, sh;
+            if (srcRatio > destRatio) {
+                sh = img.height;
+                sw = sh * destRatio;
+                sx = (img.width - sw) / 2;
+                sy = 0;
+            } else {
+                sw = img.width;
+                sh = sw / destRatio;
+                sx = 0;
+                sy = (img.height - sh) / 2;
+            }
+            ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+        }
+
+        function roundRectPath(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function heartPath(ctx, x, y, width, height) {
+            const topCurveHeight = height * 0.32;
+            ctx.beginPath();
+            ctx.moveTo(x, y + topCurveHeight);
+            ctx.bezierCurveTo(x, y, x - width / 2, y, x - width / 2, y + topCurveHeight);
+            ctx.bezierCurveTo(x - width / 2, y + (height + topCurveHeight) / 2, x, y + (height + topCurveHeight) / 2, x, y + height);
+            ctx.bezierCurveTo(x, y + (height + topCurveHeight) / 2, x + width / 2, y + (height + topCurveHeight) / 2, x + width / 2, y + topCurveHeight);
+            ctx.bezierCurveTo(x + width / 2, y, x, y, x, y + topCurveHeight);
+            ctx.closePath();
+        }
+
+        // Foto estilo polaroid (moldura branca + selo de coração)
+        function createPolaroidCanvas(img, size = 280) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size * 1.18;
+            const ctx = canvas.getContext('2d');
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.55)';
+            ctx.shadowBlur = size * 0.05;
+            roundRectPath(ctx, 0, 0, canvas.width, canvas.height, size * 0.04);
+            ctx.fillStyle = '#fffaf5';
+            ctx.fill();
+            ctx.restore();
+            const pad = size * 0.07;
+            drawImageCover(ctx, img, pad, pad, size - pad * 2, size - pad * 2);
+            ctx.fillStyle = '#FF4F6E';
+            ctx.font = `${size * 0.13}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('♥', canvas.width / 2, size + (canvas.height - size) / 2);
+            return canvas;
+        }
+
+        // Foto em formato de coração com brilho ao redor
+        function createHeartCanvas(img, size = 300) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const hx = size / 2, hy = size * 0.1, hw = size * 0.88, hh = size * 0.82;
+            ctx.save();
+            heartPath(ctx, hx, hy, hw, hh);
+            ctx.clip();
+            drawImageCover(ctx, img, 0, 0, size, size);
+            ctx.restore();
+            ctx.save();
+            heartPath(ctx, hx, hy, hw, hh);
+            ctx.lineWidth = size * 0.028;
+            ctx.strokeStyle = '#fff5f5';
+            ctx.shadowColor = '#FF6B6B';
+            ctx.shadowBlur = size * 0.06;
+            ctx.stroke();
+            ctx.restore();
+            return canvas;
+        }
+
+        function createMemorySprite(canvas) {
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, opacity: 0 });
+            const sprite = new THREE.Sprite(material);
+            scene.add(sprite);
+            return sprite;
+        }
+
+        let memorySprites = [];
+        Promise.all([loadMemoryImage(MEMORY_PHOTO_1), loadMemoryImage(MEMORY_PHOTO_2)]).then(([img1, img2]) => {
+            const sourceImages = [img1, img2];
+            const NUM_MEMORIES = 10;
+            for (let i = 0; i < NUM_MEMORIES; i++) {
+                const img = sourceImages[i % sourceImages.length];
+                const isHeart = (i % 2 === 0);
+                const canvas = isHeart ? createHeartCanvas(img, 300) : createPolaroidCanvas(img, 280);
+                const sprite = createMemorySprite(canvas);
+                memorySprites.push({
+                    sprite,
+                    angle: Math.random() * Math.PI * 2,
+                    tilt: 0.2 + Math.random() * 0.4,
+                    maxDist: 6.5 + Math.random() * 7,
+                    jumpHeight: 3 + Math.random() * 3.5,
+                    baseScale: 1.7 + Math.random() * 1.2,
+                    cycleDuration: 7 + Math.random() * 6,
+                    offset: Math.random() * 25,
+                    aspect: canvas.width / canvas.height
+                });
+            }
+        });
+
+        function updateMemorySprites(time) {
+            const activeFraction = 0.62;
+            memorySprites.forEach(m => {
+                const cyclePos = ((time + m.offset) % m.cycleDuration) / m.cycleDuration;
+                if (cyclePos > activeFraction) {
+                    m.sprite.material.opacity = 0;
+                    return;
+                }
+                const u = cyclePos / activeFraction;
+                const easeOut = Math.sin(u * Math.PI / 2);
+                const envelope = Math.sin(u * Math.PI);
+                const dist = m.maxDist * easeOut;
+                const x = Math.cos(m.angle) * dist;
+                const z = Math.sin(m.angle) * dist;
+                const y = 0.5 + envelope * m.jumpHeight + m.tilt;
+                m.sprite.position.set(x, y, z);
+
+                let opacity;
+                if (u < 0.12) opacity = u / 0.12;
+                else if (u > 0.82) opacity = (1 - u) / (1 - 0.82);
+                else opacity = 1;
+                m.sprite.material.opacity = Math.max(0, Math.min(1, opacity));
+
+                const scale = m.baseScale * (0.35 + 0.65 * envelope);
+                m.sprite.scale.set(scale * m.aspect, scale, 1);
+            });
+        }
+
+        // ---------- ANIMAÇÃO E ROTAÇÕES ----------
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.008;
+            
+            const intensity = 1.4 + Math.sin(time * 2.5) * 0.4;
+            coreGlow.material.emissiveIntensity = intensity;
+            pointLight.intensity = 0.9 + Math.sin(time * 2.2) * 0.25;
+            
+            dustCloud.rotation.y = time * 0.03;
+            starsField.rotation.x = Math.sin(time * 0.05) * 0.05;
+            starsField.rotation.y = time * 0.01;
+            haloRing.rotation.y = time * 0.1;
+            haloRing.rotation.x = Math.sin(time * 0.2) * 0.1;
+            pollenPoints.rotation.y = time * 0.02;
+            
+            // Fazer com que as gérberas tenham um leve movimento de balanço
+            gerberasGroup.children.forEach((gerbera, idx) => {
+                gerbera.rotation.z = Math.sin(time * 1.2 + idx) * 0.03;
+                gerbera.rotation.x = Math.cos(time * 1.0 + idx) * 0.02;
+            });
+            
+            updateMemorySprites(time);
+
+            controls.update();
+            effectComposer.render();
+        }
+        animate();
+        
+        // Redimensionamento
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            effectComposer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        console.log('🌺 Galáxia de Gérberas Vermelhas - Feliz Dia das Flores Vermelhas');
+    </script>
+</body>
+</html>
